@@ -141,7 +141,7 @@ else {
         $AZ_online_version = Get-InstalledModule -name AZ
         $AZ_installed_version = Find-Module -Name Az
         
-        if ([version]$AZ_online_version_number.version -gt [version]$AZ_installed_version_number.version) {
+        if ([version]$AZ_online_version.version -gt [version]$AZ_installed_version.version) {
             Write-Host -ForegroundColor Red ">Online update available"
             Update-Module -Name AZ -Confirm
         }
@@ -160,7 +160,7 @@ else {
 }
 		
 $psgallery = Get-PSRepository -name psgallery
-if ($psgallery_check.InstallationPolicy -eq "Trusted") {
+if ($psgallery.InstallationPolicy -eq "Trusted") {
             Write-host -ForegroundColor Yellow "Cleaning up"
             Write-host -ForegroundColor Yellow "Setting PSGallery to Untrusted"
             Set-PSRepository -Name PSGallery -InstallationPolicy Unrusted
