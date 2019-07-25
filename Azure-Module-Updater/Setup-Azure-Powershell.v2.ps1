@@ -7,7 +7,7 @@ Write-Host -ForegroundColor Yellow "Checking Pre-Requisites"
 Write-Host ""
 
 #Check Powershell is version 5 or above
-if ($PSVersionTable.PSVersion.Major -ge 5)
+if ([System.Version]"$($PSversionTable.PSVersion)" -ge [System.Version]"5.1")
     {
         Write-Host -ForegroundColor Yellow "Checking PS version"
         Write-Host -ForegroundColor Green ">PS version is compatible"
@@ -105,8 +105,6 @@ if ($AzureRM_installed -eq "true"){
             Write-Host -ForegroundColor Red ">https://docs.microsoft.com/en-us/powershell/azure/uninstall-az-ps?view=azps-2.0.0#uninstall-azure-powershell-msi"
             exit
         }
-        Write-Host -ForegroundColor Yellow "Enabling legacy Azure module compatability"
-        Enable-AzureRmAlias
     }
 }
 else {
@@ -129,15 +127,21 @@ else {
             Set-PSRepository -Name PSGallery -InstallationPolicy Unrusted
             exit
         } 
+        Write-Host -ForegroundColor Yellow "Enabling legacy Azure module compatability"
+        try {
+            Enable-AzureRmAlias -Scope LocalMachine
+            Write-Host -ForegroundColor Green ">AzureRM Aliases enabled. All previous Azure powershell scripts are now compatible"           
+        }
+        catch {
+            Write-Host -ForegroundColor Green ">Could not enable AzureRM Aliases. Please try running this command Enable-AzureRmAlias manually"           
+        }
     }
     else {
         Write-Host -ForegroundColor Yellow "Checking for latest available version"
         $AZ_online_version = Get-InstalledModule -name AZ
         $AZ_installed_version = Find-Module -Name Az
-        $AZ_installed_version_number = "$($AZ_online_version.version.major).$($AZ_online_version.version.minor).$($AZ_online_version.Version.Build)"
-        $AZ_online_version_number = "$($AZ_installed_version.version.major).$($AZ_installed_version.version.minor).$($AZ_installed_version.Version.Build)"
         
-        if ([version]$AZ_online_version_number -gt [version]$AZ_installed_version_number) {
+        if ([version]$AZ_online_version_number.version -gt [version]$AZ_installed_version_number.version) {
             Write-Host -ForegroundColor Red ">Online update available"
             Update-Module -Name AZ -Confirm
         }
@@ -146,7 +150,7 @@ else {
         }
         Write-Host -ForegroundColor Yellow "Enabling legacy Azure module compatability"
         try {
-            Enable-AzureRmAlias
+            Enable-AzureRmAlias -Scope LocalMachine
             Write-Host -ForegroundColor Green ">AzureRM Aliases enabled. All previous Azure powershell scripts are now compatible"           
         }
         catch {
@@ -154,7 +158,7 @@ else {
         }
     }
 }
-
+		
 $psgallery = Get-PSRepository -name psgallery
 if ($psgallery_check.InstallationPolicy -eq "Trusted") {
             Write-host -ForegroundColor Yellow "Cleaning up"
