@@ -2,10 +2,11 @@
 Connect-AzAccount | out-null
 
 $Subscription = Get-AzSubscription
-Write-Host "Please select your subscrption"
+Clear-Host
+Write-Host "Here are your following subscriptions"
 
 For ($i=0; $i -lt $Subscription.Length; $i++) {
     Write-Host $i $Subscription.name[$i]
 }
-$i = Read-Host -Prompt "Please slect your Subscription" 
+$i = Read-Host -Prompt "Please select your Subscription" 
 Select-AzSubscription -SubscriptionName $Subscription.name[$i]
