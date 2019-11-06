@@ -6,12 +6,16 @@ Write-Host ""
 Write-Host -ForegroundColor Yellow "Checking Pre-Requisites"
 Write-Host ""
 
+#Check if Powershell gallery is trusted/untrusted
+$psgallery = Get-PSRepository -name psgallery
+
 #Check Powershell is version 5 or above
+#need to fix this for beta versions of powreshell
 if ([System.Version]"$($PSversionTable.PSVersion)" -ge [System.Version]"5.1")
     {
         Write-Host -ForegroundColor Yellow "Checking PS version"
         Write-Host -ForegroundColor Green ">PS version is compatible"
-        $Compatible = "True"
+        #$Compatible = $true
     }
 else {
     Write-Host ""
@@ -25,7 +29,7 @@ else {
 #Checking Elevated session
 Write-Host -ForegroundColor Yellow "Checking for Admin rights"
 if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) { 
-    $admin = "False"
+    #$admin = $False
     Write-Host -ForegroundColor Red ">Not an Admin"
     Write-Host -ForegroundColor Yellow ">Trying to elevate"
     try {
@@ -38,32 +42,32 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
     }
 }
 else {
-    $admin = "True"
+    #$admin = $True
     Write-Host -ForegroundColor Green ">Admin rights confirmed"
 }
 
 #Is AzureRM powershell Module installed?
 Write-Host -ForegroundColor Yellow "Checking if Legacy AzureRM module is installed"
 try {
-    $AzureRM_Version_installed = Get-InstalledModule -name AzureRM -erroraction stop
+    (Get-InstalledModule -name AzureRM -erroraction stop).version
     Write-Host -ForegroundColor Red ">AzureRM Module is Installed"
-    $AzureRM_installed = "True"
+    $AzureRM_installed = $True
     } 
 catch {
     Write-Host -ForegroundColor Green ">AzureRM Module not installed"
-    $AzureRM_installed = "False"
+    $AzureRM_installed = $False
     }
 
 #Is AZ powershell Module installed?
 Write-Host -ForegroundColor Yellow "Checking if AZ module is installed"
 try {
-    $AZ_Version_installed = Get-InstalledModule -name AZ -erroraction stop
+    (Get-InstalledModule -name AZ -erroraction stop).version
     Write-Host -ForegroundColor Green ">AZ Module Installed"
-    $AZ_installed = "True"
+    $AZ_installed = $True
     } 
 catch {
     Write-Host -ForegroundColor Red ">AZ Module not installed"
-    $AZ_installed = "False"
+    $AZ_installed = $False
     }
 
 Write-Host ""
@@ -72,8 +76,8 @@ Write-Host ""
 Write-Host -ForegroundColor Yellow "Configuraing system"
 Write-Host ""
 
-if ($AzureRM_installed -eq "true"){
-    if ($AZ_installed -eq "False"){
+if ($AzureRM_installed -eq $true){
+    if ($AZ_installed -eq $False){
         Write-Host ""
         Write-Host -ForegroundColor Yellow "Installing AZ powershell module"
         try {
@@ -82,13 +86,13 @@ if ($AzureRM_installed -eq "true"){
             Write-host -ForegroundColor Green "PSGallery is Trusted"
             Install-Module -Name Az -AllowClobber
             Write-Host -ForegroundColor Green ">AZ powershell module installed"
-            $AZ_installed = "True"
+            $AZ_installed = $True
         }
         catch {
             Write-Host -ForegroundColor Red ">Unable to insall AZ Powershell module"
-            Write-host -ForegroundColor Yellow "Cleaning up"
-            Write-host -ForegroundColor Yellow "Setting PSGallery to Untrusted"
-            Set-PSRepository -Name PSGallery -InstallationPolicy Unrusted
+            Write-host -ForegroundColor Yellow "Rolling back changes"
+            Write-host -ForegroundColor Yellow "Setting PSGallery to $($psgallery.InstallationPolicy)"
+            Set-PSRepository -Name PSGallery -InstallationPolicy $psgallery.InstallationPolicy
             exit
         } 
     }
@@ -97,7 +101,7 @@ if ($AzureRM_installed -eq "true"){
         try {
             Uninstall-AzureRm -erroraction stop
             Write-Host -ForegroundColor Green ">AzureRM powershell module removed"
-            $AzureRM_installed = "False"
+            $AzureRM_installed = $False
         }
         catch {
             Write-Host -ForegroundColor Red ">Can't uninstall AzureRM powershell module"
@@ -108,7 +112,7 @@ if ($AzureRM_installed -eq "true"){
     }
 }
 else {
-    if ($AZ_installed -eq "False"){
+    if ($AZ_installed -eq $False){
         Write-Host ""
         Write-Host -ForegroundColor Yellow "Installing AZ powershell module"
         try {
@@ -118,13 +122,13 @@ else {
             Write-Host -ForegroundColor Yellow "Installing AZ powershell module"
             Install-Module -Name Az -erroraction stop
             Write-Host -ForegroundColor Green ">AZ powershell module installed"
-            $AZ_installed = "True"
+            $AZ_installed = $True
         }
         catch {
             Write-Host -ForegroundColor Red ">Unable to install AZ Powershell module"
-            Write-host -ForegroundColor Yellow ">Cleaning up"
-            Write-host -ForegroundColor Yellow ">Setting PSGallery to Untrusted"
-            Set-PSRepository -Name PSGallery -InstallationPolicy Unrusted
+            Write-host -ForegroundColor Yellow "Rolling back changes"
+            Write-host -ForegroundColor Yellow "Setting PSGallery to $($psgallery.InstallationPolicy)"
+            Set-PSRepository -Name PSGallery -InstallationPolicy $psgallery.InstallationPolicy
             exit
         } 
         Write-Host -ForegroundColor Yellow "Enabling legacy Azure module compatability"
@@ -138,8 +142,8 @@ else {
     }
     else {
         Write-Host -ForegroundColor Yellow "Checking for latest available version"
-        $AZ_online_version = Get-InstalledModule -name AZ
-        $AZ_installed_version = Find-Module -Name Az
+        $AZ_installed_version = Get-InstalledModule -name AZ
+        $AZ_online_version = Find-Module -Name Az
         
         if ([version]$AZ_online_version.version -gt [version]$AZ_installed_version.version) {
             Write-Host -ForegroundColor Red ">Online update available"
@@ -159,11 +163,10 @@ else {
     }
 }
 		
-$psgallery = Get-PSRepository -name psgallery
-if ($psgallery.InstallationPolicy -eq "Trusted") {
+if ((Get-PSRepository -name PSGallery).InstallationPolicy -ne $psgallery.InstallationPolicy) {
             Write-host -ForegroundColor Yellow "Cleaning up"
-            Write-host -ForegroundColor Yellow "Setting PSGallery to Untrusted"
-            Set-PSRepository -Name PSGallery -InstallationPolicy Unrusted
+            Write-host -ForegroundColor Yellow "Setting PSGallery to $($psgallery.InstallationPolicy)"
+            Set-PSRepository -Name PSGallery -InstallationPolicy $psgallery.InstallationPolicy
 }
 
 Write-Host -ForegroundColor Green ""
