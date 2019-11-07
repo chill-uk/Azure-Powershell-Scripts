@@ -31,20 +31,29 @@ Write-Host -ForegroundColor Yellow "Installing AZ powershell module"
 }
 
 #Check Powershell is version 5 or above
-#need to fix this for beta versions of powreshell
-if ([System.Version]"$($PSversionTable.PSVersion)" -ge [System.Version]"5.1")
-    {
-        Write-Host -ForegroundColor Yellow "Checking PS version"
-        Write-Host -ForegroundColor Green ">PS version is compatible"
-        #$Compatible = $true
+try {
+    [System.Version]"$($PSversionTable.PSVersion)" -ge [System.Version]"5.1" > $null
+    $Powershell_is_beta = $False
+}
+catch {
+    Write-Host "Powershell version not compatible"
+    $Powershell_is_beta = $True
+    exit
+}
+if ($Powershell_is_beta -eq $False){
+    if ([System.Version]"$($PSversionTable.PSVersion)" -ge [System.Version]"5.1"){
+            Write-Host -ForegroundColor Yellow "Checking PS version"
+            Write-Host -ForegroundColor Green ">PS version is compatible"
+            #$Compatible = $true
     }
-else {
-    Write-Host ""
+    else {
+        Write-Host ""
         $PSVersionTable.PSVersion
         Write-Host -ForegroundColor Red ">PS version is not compatible"
         Write-Host -ForegroundColor Yellow ">Please download the latest Powreshell version for your system from here:"
         Write-Host -ForegroundColor White ">https://tinyurl.com/y3zm66ce"
         exit
+    }
 }
 
 #Checking Elevated session
@@ -70,7 +79,7 @@ else {
 #Is AzureRM powershell Module installed?
 Write-Host -ForegroundColor Yellow "Checking if Legacy AzureRM module is installed"
 try {
-    (Get-InstalledModule -name AzureRM -erroraction stop).version
+    (Get-InstalledModule -name AzureRM -erroraction stop).version > $null
     Write-Host -ForegroundColor Red ">AzureRM Module is Installed"
     $AzureRM_installed = $True
     } 
@@ -82,7 +91,7 @@ catch {
 #Is AZ powershell Module installed?
 Write-Host -ForegroundColor Yellow "Checking if AZ module is installed"
 try {
-    (Get-InstalledModule -name AZ -erroraction stop).version
+    (Get-InstalledModule -name AZ -erroraction stop).version > $null
     Write-Host -ForegroundColor Green ">AZ Module Installed"
     $AZ_installed = $True
     } 
