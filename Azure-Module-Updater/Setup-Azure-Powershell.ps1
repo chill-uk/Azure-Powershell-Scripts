@@ -9,6 +9,27 @@ Write-Host ""
 #Check if Powershell gallery is trusted/untrusted
 $psgallery = Get-PSRepository -name psgallery
 
+function install_az_powershell{ 
+Write-Host ""
+Write-Host -ForegroundColor Yellow "Installing AZ powershell module"
+    try {
+        Write-host -ForegroundColor Yellow "Trusting PSGallery"
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        Write-host -ForegroundColor Green ">PSGallery is Trusted"
+        Write-Host -ForegroundColor Yellow "Installing AZ powershell module"
+        Install-Module -Name Az -erroraction stop
+        Write-Host -ForegroundColor Green ">AZ powershell module installed"
+        $AZ_installed = $True
+    }
+    catch {
+        Write-Host -ForegroundColor Red ">Unable to install AZ Powershell module"
+        Write-host -ForegroundColor Yellow "Rolling back changes"
+        Write-host -ForegroundColor Yellow "Setting PSGallery to $($psgallery.InstallationPolicy)"
+        Set-PSRepository -Name PSGallery -InstallationPolicy $psgallery.InstallationPolicy
+        exit
+    } 
+}
+
 #Check Powershell is version 5 or above
 #need to fix this for beta versions of powreshell
 if ([System.Version]"$($PSversionTable.PSVersion)" -ge [System.Version]"5.1")
@@ -78,23 +99,7 @@ Write-Host ""
 
 if ($AzureRM_installed -eq $true){
     if ($AZ_installed -eq $False){
-        Write-Host ""
-        Write-Host -ForegroundColor Yellow "Installing AZ powershell module"
-        try {
-            Write-host -ForegroundColor Yellow "Trusting PSGallery"
-            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-            Write-host -ForegroundColor Green "PSGallery is Trusted"
-            Install-Module -Name Az -AllowClobber
-            Write-Host -ForegroundColor Green ">AZ powershell module installed"
-            $AZ_installed = $True
-        }
-        catch {
-            Write-Host -ForegroundColor Red ">Unable to insall AZ Powershell module"
-            Write-host -ForegroundColor Yellow "Rolling back changes"
-            Write-host -ForegroundColor Yellow "Setting PSGallery to $($psgallery.InstallationPolicy)"
-            Set-PSRepository -Name PSGallery -InstallationPolicy $psgallery.InstallationPolicy
-            exit
-        } 
+        install_az_powershell
     }
     else{
         Write-Host -ForegroundColor Yellow "Removing legacy AzureRM powershell module"
@@ -113,24 +118,7 @@ if ($AzureRM_installed -eq $true){
 }
 else {
     if ($AZ_installed -eq $False){
-        Write-Host ""
-        Write-Host -ForegroundColor Yellow "Installing AZ powershell module"
-        try {
-            Write-host -ForegroundColor Yellow "Trusting PSGallery"
-            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-            Write-host -ForegroundColor Green ">PSGallery is Trusted"
-            Write-Host -ForegroundColor Yellow "Installing AZ powershell module"
-            Install-Module -Name Az -erroraction stop
-            Write-Host -ForegroundColor Green ">AZ powershell module installed"
-            $AZ_installed = $True
-        }
-        catch {
-            Write-Host -ForegroundColor Red ">Unable to install AZ Powershell module"
-            Write-host -ForegroundColor Yellow "Rolling back changes"
-            Write-host -ForegroundColor Yellow "Setting PSGallery to $($psgallery.InstallationPolicy)"
-            Set-PSRepository -Name PSGallery -InstallationPolicy $psgallery.InstallationPolicy
-            exit
-        } 
+        install_az_powershell
         Write-Host -ForegroundColor Yellow "Enabling legacy Azure module compatability"
         try {
             Enable-AzureRmAlias -Scope LocalMachine
