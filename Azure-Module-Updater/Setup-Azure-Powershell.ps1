@@ -3,7 +3,7 @@ Write-Host -ForegroundColor Yellow "Welcome to the Azure module setup wizard"
 Write-Host ""
 #Pre-requisites
 #Powershell version 5+, Elevated session, AzureRM powershell Module installed?, AZ powershell module installed?, Set PSGallery to trusted, install nuget
-Write-Host -ForegroundColor Yellow "Checking Pre-Requisites"
+Write-Host -ForegroundColor DarkBlue "Checking Pre-Requisites"
 Write-Host ""
 
 #Check if Powershell gallery is trusted/untrusted
